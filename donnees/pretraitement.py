@@ -39,3 +39,39 @@ def FakeNews_Task3_2022_V0(chemin: str, ensemble: str):
     else:
         raise Exception("Ensemble invalide! Valeurs permises : 'train', 'dev', 'test'.")
     return data
+
+
+def Fake_Real_news(chemin: str, ensemble: str):
+    """
+    Fonction qui effectue le pré-traitement du jeu de données Fake_Real_news. 
+
+    Entrées
+        chemin: chemin des données brutes
+        ensemble: nom de l'ensemble de données (Fake ou True)
+
+    Sortie
+        données pré-traitées
+    """
+    data = pd.read_csv(chemin)
+    if ensemble=="Fake":
+        assert data.shape==(23481,4), "Les données brutes n'ont pas les bonnes dimensions..."
+        assert (data.columns==["title", "text", "subject", "date"]).all(), "Les données brutes n'ont pas les bonnes colonnes..."
+        data.drop_duplicates(inplace=True)
+        data.drop_duplicates(["text","title"],keep="first",inplace=True)
+        data = data[~(data.text.isin([" ","  "]))].copy()
+        data.drop(18933,inplace=True)
+        data.drop(["subject","date"],axis=1,inplace=True)
+        data["label"] = "false"
+        assert data.shape==(17461,3) and (data.columns==["title", "text", "label"]).all(), "Il y a eu une erreur..."
+    elif ensemble=="True":
+        assert data.shape==(21417,4), "Les données brutes n'ont pas les bonnes dimensions..."
+        assert (data.columns==["title", "text", "subject", "date"]).all(), "Les données brutes n'ont pas les bonnes colonnes..."
+        data.drop_duplicates(inplace=True)
+        data.drop_duplicates(["text","title"],keep="first",inplace=True)
+        data = data[~(data.text.isin([" "]))].copy()
+        data.drop(["subject","date"],axis=1,inplace=True)
+        data["label"] = "true"
+        assert data.shape==(21196,3) and (data.columns==["title", "text", "label"]).all(), "Il y a eu une erreur..."
+    else:
+        raise Exception("Ensemble invalide! Valeurs permises : 'Fake', 'True'.")
+    return data
