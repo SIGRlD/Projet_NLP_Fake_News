@@ -4,14 +4,14 @@ import numpy as np
 
 def FakeNews_Task3_2022_V0(chemin: str, ensemble: str):
     """
-    Fonction qui effectue le pré-traitement du jeu de données FakeNews_Task3_2022_V0. 
+    Fonction qui effectue le nettoyage du jeu de données FakeNews_Task3_2022_V0. 
 
     Entrées
         chemin: chemin des données brutes
         ensemble: nom de l'ensemble de données (train, dev ou test)
 
     Sortie
-        données pré-traitées
+        données nettoyées
     """
     data = pd.read_csv(chemin)
     if ensemble=="train":
@@ -46,14 +46,14 @@ def FakeNews_Task3_2022_V0(chemin: str, ensemble: str):
 
 def Fake_Real_news(chemin_fake: str, chemin_true: str):
     """
-    Fonction qui effectue le pré-traitement du jeu de données Fake_Real_news. 
+    Fonction qui effectue le nettoyage du jeu de données Fake_Real_news. 
 
     Entrées
         chemin_fake: chemin des données brutes (Fake)
         chemin_true: chemin des données brutes (True)
 
     Sortie
-        données pré-traitées
+        données nettoyées
     """
     # Donnees Fake
     data_fake = pd.read_csv(chemin_fake)
@@ -84,7 +84,7 @@ def Fake_Real_news(chemin_fake: str, chemin_true: str):
 
 def Veritas(chemin_v2: str, chemin_v2_1: str, chemin_v4: str, chemin_v4_1: str):
     """
-    Fonction qui effectue le pré-traitement du jeu de données Fake_Real_news. 
+    Fonction qui effectue le nettoyage du jeu de données Fake_Real_news. 
 
     Entrées
         chemin_v2: chemin des données brutes (v2.0)
@@ -93,7 +93,7 @@ def Veritas(chemin_v2: str, chemin_v2_1: str, chemin_v4: str, chemin_v4_1: str):
         chemin_v4_1: chemin des données brutes (v4.1)
 
     Sortie
-        données pré-traitées
+        données nettoyées
     """
     # Veritas v2
     data_v2 = pd.read_csv(chemin_v2,sep="\t",index_col=0)
