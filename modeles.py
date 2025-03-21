@@ -348,7 +348,7 @@ def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Da
     plt.show()
 
 
-def evaluation(y_true: torch.Tensor, y_pred: torch.Tensor, ensemble: str, normaliser: str = None):
+def evaluation(y_true: torch.Tensor, y_pred: torch.Tensor, ensemble: str, normaliser: str = None, multi: bool = False):
     """
     Fonction qui affiche les résultats du modèle (métriques et matrice de confusion). 
     Pour la classification binaire. 
@@ -358,11 +358,13 @@ def evaluation(y_true: torch.Tensor, y_pred: torch.Tensor, ensemble: str, normal
         y_pred: tenseur des prédictions (n_phrases,)
         ensemble: nom de l'ensemble de données (train, dev, test, ...)
         normaliser: paramètre pour la matrice de confusion (None, 'true', 'pred' ou 'all')
+        multi: s'il y a plus de 2 classes
     """
+    moyenne = "micro" if multi else "binary"
     print("Justesse {} : {:.2f}%".format(ensemble,accuracy_score(y_true,y_pred)*100))
-    print("Précision {} : {:.2f}%".format(ensemble,precision_score(y_true,y_pred)*100))
-    print("Rappel {} : {:.2f}%".format(ensemble,recall_score(y_true,y_pred)*100))
-    print("Score F1 {} : {:.2f}%".format(ensemble,f1_score(y_true,y_pred)*100))
+    print("Précision {} : {:.2f}%".format(ensemble,precision_score(y_true,y_pred,average=moyenne)*100))
+    print("Rappel {} : {:.2f}%".format(ensemble,recall_score(y_true,y_pred,average=moyenne)*100))
+    print("Score F1 {} : {:.2f}%".format(ensemble,f1_score(y_true,y_pred,average=moyenne)*100))
     ConfusionMatrixDisplay.from_predictions(y_true,y_pred,normalize=normaliser)
     plt.title(f"Matrice de confusion - Données {ensemble}")
     plt.show()
