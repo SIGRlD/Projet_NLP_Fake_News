@@ -15,7 +15,7 @@ class baseLSTM(nn.Module):
         """
         Modèle LSTM simple. 
         1 couche LSTM + 1 couche pleinement connectée. 
-        Pour les séquences de texte à longueur variable. 
+        Pour les séquences de texte à longueur variable ou fixe. 
 
         Paramètres
             input_size: taille des entrées
@@ -48,6 +48,80 @@ class baseLSTM(nn.Module):
             scores = self.lstm(X)[0][-1,:]
         elif self.seq=="fix":
             scores = self.lstm(X)[0][:,-1,:]
+        scores = self.sortie(scores)
+        return self.sig(scores)
+    
+    def predict(self, X, seuil: float = 0.5):
+        """
+        Fonction qui effectue une prédiction. 
+
+        Entrée
+            X: données à utiliser n_phrases * (n_mots_i, n_emb) ou (n_phrases, max_mots, n_emb)
+            seuil: seuil de la classe positive (p>seuil -> 1)
+        
+        Sortie
+            prédictions du modèle (n_phrases,)
+        """
+        with torch.no_grad():
+            pred = self.predict_proba(X)
+            return torch.greater(pred,seuil).type(torch.int)
+    
+    def predict_proba(self, X):
+        """
+        Fonction qui effectue une prédiction (probabilités). 
+
+        Entrée
+            X: données à utiliser n_phrases * (n_mots_i, n_emb) ou (n_phrases, max_mots, n_emb)
+        
+        Sortie
+            prédictions (probabilités) du modèle (n_phrases,)
+        """
+        with torch.no_grad():
+            if self.seq=="var":
+                pred = [self.forward(x.to(self.device)).item() for x in X]
+                return torch.tensor(pred)
+            elif self.seq=="fix":
+                return self.forward(X.to(self.device)).flatten().to("cpu")
+
+
+class baseBiLSTM(nn.Module):
+    def __init__(self, input_size: int, hidden_size: int, seq: str, device: str):
+        """
+        Modèle Bi-LSTM simple. 
+        1 couche Bi-LSTM + 1 couche pleinement connectée. 
+        Pour les séquences de texte à longueur variable ou fixe. 
+
+        Paramètres
+            input_size: taille des entrées
+            hidden_size: taille de la couche cachée
+            seq: type des séquences de texte 'var' ou 'fix'
+            device: 'cpu', 'cuda', 'mps', ...
+        """
+        assert seq in ["var","fix"], "Type de séquences invalide"
+        super(baseBiLSTM, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.seq = seq
+        self.device = device
+
+        self.bilstm = nn.LSTM(input_size, hidden_size, num_layers=1, batch_first=True, bidirectional=True, device=device)
+        self.sortie = nn.Linear(2*hidden_size, 1, device=device)
+        self.sig = nn.Sigmoid()
+    
+    def forward(self, X: torch.Tensor):
+        """
+        Propagation avant pour l'entrainement. 
+
+        Entrée
+            X: donnée(s) d'entrée (n_mots_i, n_emb) ou (n_phrases, max_mots, n_emb)
+        
+        Sortie
+            sortie du modèle
+        """
+        if self.seq=="var":
+            scores = self.bilstm(X)[0][-1,:]
+        elif self.seq=="fix":
+            scores = self.bilstm(X)[0][:,-1,:]
         scores = self.sortie(scores)
         return self.sig(scores)
     
