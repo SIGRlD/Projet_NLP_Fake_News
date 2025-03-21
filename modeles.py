@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 # Modeles
 
 class baseLSTM(nn.Module):
-    def __init__(self, input_size: int, hidden_size: int, device: str):
+    def __init__(self, input_size: int, hidden_size: int, seq: str, device: str):
         """
         Modèle LSTM simple. 
         1 couche LSTM + 1 couche pleinement connectée. 
@@ -20,15 +20,18 @@ class baseLSTM(nn.Module):
         Paramètres
             input_size: taille des entrées
             hidden_size: taille de la couche cachée
+            seq: type des séquences de texte 'var' ou 'fix'
             device: 'cpu', 'cuda', 'mps', ...
         """
+        assert seq in ["var","fix"], "Type de séquences invalide"
         super(baseLSTM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.seq = seq
         self.device = device
 
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers=1, bias=True, dropout=0.0, bidirectional=False, proj_size=0, device=device)
-        self.sortie = nn.Linear(hidden_size, 1, bias=True, device=device)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers=1, batch_first=True, device=device)
+        self.sortie = nn.Linear(hidden_size, 1, device=device)
         self.sig = nn.Sigmoid()
     
     def forward(self, X: torch.Tensor):
@@ -36,21 +39,24 @@ class baseLSTM(nn.Module):
         Propagation avant pour l'entrainement. 
 
         Entrée
-            X: une donnée d'entrée (n_mots_i, n_emb)
+            X: donnée(s) d'entrée (n_mots_i, n_emb) ou (n_phrases, max_mots, n_emb)
         
         Sortie
             sortie du modèle
         """
-        scores = self.lstm(X)[0][-1,:]
+        if self.seq=="var":
+            scores = self.lstm(X)[0][-1,:]
+        elif self.seq=="fix":
+            scores = self.lstm(X)[0][:,-1,:]
         scores = self.sortie(scores)
         return self.sig(scores)
     
-    def predict(self, X: list, seuil: float = 0.5):
+    def predict(self, X, seuil: float = 0.5):
         """
         Fonction qui effectue une prédiction. 
 
         Entrée
-            X: données à utiliser n_phrases * (n_mots_i, n_emb)
+            X: données à utiliser n_phrases * (n_mots_i, n_emb) ou (n_phrases, max_mots, n_emb)
             seuil: seuil de la classe positive (p>seuil -> 1)
         
         Sortie
@@ -60,19 +66,22 @@ class baseLSTM(nn.Module):
             pred = self.predict_proba(X)
             return torch.greater(pred,seuil).type(torch.int)
     
-    def predict_proba(self, X: list):
+    def predict_proba(self, X):
         """
         Fonction qui effectue une prédiction (probabilités). 
 
         Entrée
-            X: données à utiliser n_phrases * (n_mots_i, n_emb)
+            X: données à utiliser n_phrases * (n_mots_i, n_emb) ou (n_phrases, max_mots, n_emb)
         
         Sortie
             prédictions (probabilités) du modèle (n_phrases,)
         """
         with torch.no_grad():
-            pred = [self.forward(x.to(self.device)).item() for x in X]
-            return torch.tensor(pred)
+            if self.seq=="var":
+                pred = [self.forward(x.to(self.device)).item() for x in X]
+                return torch.tensor(pred)
+            elif self.seq=="fix":
+                return self.forward(X.to(self.device)).flatten().to("cpu")
 
 
 class baseCNN(nn.Module):
@@ -99,7 +108,7 @@ class baseCNN(nn.Module):
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool1d(2,2)
         self.flat = nn.Flatten()
-        self.sortie = nn.Linear(int((input_size-kernel_size+1)*out_channels/2), 1, bias=True, device=device)
+        self.sortie = nn.Linear(int((input_size-kernel_size+1)*out_channels/2), 1, device=device)
         self.sig = nn.Sigmoid()
     
     def forward(self, X: torch.Tensor):
@@ -131,8 +140,8 @@ class baseCNN(nn.Module):
             prédictions du modèle (n_phrases,)
         """
         with torch.no_grad():
-            pred = self.forward(X.to(self.device))
-            return torch.greater(pred,seuil).type(torch.int).flatten().to("cpu")
+            pred = self.predict_proba(X)
+            return torch.greater(pred,seuil).type(torch.int)
     
     def predict_proba(self, X: list):
         """

@@ -14,7 +14,7 @@ class FakeNewsDataset(Dataset):
         return self.X[idx], self.y[idx]
 
 
-def ajuster(X: torch.Tensor, nb_canaux: int):
+def ajuster_canaux(X: torch.Tensor, nb_canaux: int):
     """
     Fonction qui ajuste le nombre de canaux d'un tenseur. 
 
