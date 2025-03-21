@@ -5,6 +5,7 @@ Projet de traitement automatique du langage
 Ce répertoire contient tous les scripts nécessaires au projet.  
 * **donnees** : scripts de gestion des données 
   * *nettoyage.py* : fonctions de nettoyage des données
+  * *utils.py* : fonctions de gestion des données pour l'entrainement
 * **embedding.py** : fonctions d'embedding de textes
 * **modeles.py** : fonctions d'entrainement et d'évaluation de modèles
 * **baseline.ipynb** : notebook servant à la création d'une baseline

@@ -3,13 +3,14 @@ import time
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from torch.utils.data import Dataset, DataLoader
 from IPython.display import clear_output
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay
 
 
 # Modeles
 
-class LSTM(nn.Module):
+class baseLSTM(nn.Module):
     def __init__(self, input_size: int, hidden_size: int, device: str):
         """
         Modèle LSTM simple. 
@@ -21,7 +22,7 @@ class LSTM(nn.Module):
             hidden_size: taille de la couche cachée
             device: 'cpu', 'cuda', 'mps', ...
         """
-        super(LSTM, self).__init__()
+        super(baseLSTM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.device = device
@@ -57,7 +58,7 @@ class LSTM(nn.Module):
         """
         with torch.no_grad():
             pred = self.predict_proba(X)
-            return torch.greater(pred,seuil).type(torch.int32)
+            return torch.greater(pred,seuil).type(torch.int)
     
     def predict_proba(self, X: list):
         """
@@ -72,6 +73,79 @@ class LSTM(nn.Module):
         with torch.no_grad():
             pred = [self.forward(x.to(self.device)).item() for x in X]
             return torch.tensor(pred)
+
+
+class baseCNN(nn.Module):
+    def __init__(self, input_size: int, in_channels: int, out_channels: int, kernel_size: int, device: str):
+        """
+        Modèle CNN simple. 
+        1 conv1D + 1 maxPool1D. 
+        Pour les séquences de texte à longueur fixe. 
+
+        Paramètres
+            input_size: taille des entrées
+            in_channels: nombre de canaux d'entrée
+            out_channels: nombre de canaux de sortie
+            kernel_size: taille du filtre convolutif
+            device: 'cpu', 'cuda', 'mps', ...
+        """
+        super(baseCNN, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.device = device
+
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size, device=device)
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(2,2)
+        self.flat = nn.Flatten()
+        self.sortie = nn.Linear(int((input_size-kernel_size+1)*out_channels/2), 1, bias=True, device=device)
+        self.sig = nn.Sigmoid()
+    
+    def forward(self, X: torch.Tensor):
+        """
+        Propagation avant pour l'entrainement. 
+
+        Entrée
+            X: données d'entrée (n_phrases, max_mots, n_emb)
+        
+        Sortie
+            sortie du modèle
+        """
+        scores = self.conv(X)
+        scores = self.relu(scores)
+        scores = self.maxpool(scores)
+        scores = self.flat(scores)
+        scores = self.sortie(scores)
+        return self.sig(scores)
+    
+    def predict(self, X: list, seuil: float = 0.5):
+        """
+        Fonction qui effectue une prédiction. 
+
+        Entrée
+            X: données à utiliser (n_phrases, max_mots, n_emb)
+            seuil: seuil de la classe positive (p>seuil -> 1)
+        
+        Sortie
+            prédictions du modèle (n_phrases,)
+        """
+        with torch.no_grad():
+            pred = self.forward(X.to(self.device))
+            return torch.greater(pred,seuil).type(torch.int).flatten().to("cpu")
+    
+    def predict_proba(self, X: list):
+        """
+        Fonction qui effectue une prédiction (probabilités). 
+
+        Entrée
+            X: données à utiliser (n_phrases, max_mots, n_emb)
+        
+        Sortie
+            prédictions (probabilités) du modèle (n_phrases,)
+        """
+        with torch.no_grad():
+            return self.forward(X.to(self.device)).flatten().to("cpu")
 
 
 # Fonctions
@@ -133,6 +207,63 @@ def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch
     plt.plot(erreurs["dev"],label="Validation")
     plt.legend()
     plt.show()
+
+
+def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Dataset, taille_batch: int, melanger: bool, device: str, verbose: int = 10):
+    """
+    Fonction qui entraine un réseau de neurones. 
+    Pour les séquences de texte à longueur fixe. 
+
+    Entrées
+        net: modèle
+        optimizer: optimiseur
+        max_epochs: nombre maximum d'epochs
+        Xy_train: données d'entrainement (n_phrases_t, max_mots, n_emb)
+        Xy_val: données de validation (n_phrases_v, max_mots, n_emb)
+        taille_batch: taille des batchs d'entrainement
+        melanger: si on mélange les données d'entrainement
+        device: 'cpu', 'cuda', 'mps', ...
+        verbose: fréquence d'affichage de la progression
+    """
+    train_dataloader = DataLoader(Xy_train,taille_batch,melanger)
+    loss_fn = nn.BCELoss().to(device)
+    erreurs = {"train": [], "dev": []}
+    somme_temps = 0
+    
+    for epoch in range(1,max_epochs+1):
+        debut = time.perf_counter()
+        train_losses = []
+        val_losses = []
+        
+        for X,y in train_dataloader:
+            optimizer.zero_grad()
+            pred_train = net(X.to(device))
+            train_loss = loss_fn(pred_train,y[:,None].to(device)).mean()
+            train_loss.backward()
+            optimizer.step()
+            train_losses.append(train_loss.item())
+        erreurs["train"].append(np.mean(train_losses))
+
+        with torch.no_grad():
+            pred_val = net(Xy_val.X.to(device))
+            val_loss = loss_fn(pred_val,Xy_val.y[:,None].to(device)).mean()
+        erreurs["dev"].append(val_loss.item())
+
+        fin = time.perf_counter()
+        somme_temps += fin-debut
+        if epoch%verbose==0:
+            clear_output(wait=True)
+            temps = somme_temps/epoch
+            restant = int((max_epochs-epoch)*temps)
+            print("Epochs : {} | Perte train : {:.4f} | Perte dev : {:.4f} | ETA : {} m {} s".format(epoch,erreurs["train"][-1],erreurs["dev"][-1],restant//60,restant%60))
+
+    clear_output(wait=True)
+    print("Epochs : {} | Perte train : {:.4f} | Perte dev : {:.4f} | Temps : {} m {} s".format(epoch,erreurs["train"][-1],erreurs["dev"][-1],int(somme_temps)//60,int(somme_temps)%60))
+    plt.plot(erreurs["train"],label="Entrainement")
+    plt.plot(erreurs["dev"],label="Validation")
+    plt.legend()
+    plt.show()
+
 
 def evaluation(y_true: torch.Tensor, y_pred: torch.Tensor, ensemble: str, normaliser: str = None):
     """

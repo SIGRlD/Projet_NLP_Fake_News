@@ -84,7 +84,7 @@ def tokeniser(corpus: pd.Series, modele, pad: bool = False):
         pad: si on padde les séquences
 
     Sortie
-        liste des jetons n_phrases * (n_mots_i, n_emb) 
+        liste des jetons n_phrases * (n_mots_i, n_emb)
         ou tenseur des jetons (n_phrases, max_mots, n_emb)
     """
     tokens_all = []
