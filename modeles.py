@@ -118,10 +118,15 @@ class baseBiLSTM(nn.Module):
         Sortie
             sortie du modèle
         """
+        out = self.bilstm(X)[0]
         if self.seq=="var":
-            scores = self.bilstm(X)[0][-1,:]
+            endroit = out[-1,:self.hidden_size]
+            envers = out[0,self.hidden_size:]
+            scores = torch.cat((endroit,envers))
         elif self.seq=="fix":
-            scores = self.bilstm(X)[0][:,-1,:]
+            endroit = out[:,-1,:self.hidden_size]
+            envers = out[:,0,self.hidden_size:]
+            scores = torch.cat((endroit,envers),1)
         scores = self.sortie(scores)
         return self.sig(scores)
     
