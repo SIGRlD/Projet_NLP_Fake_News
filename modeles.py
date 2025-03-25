@@ -15,7 +15,7 @@ class baseLSTM(nn.Module):
         """
         Modèle LSTM simple. 
         1 couche LSTM + 1 couche pleinement connectée. 
-        Pour les séquences de texte à longueur variable ou fixe. 
+        Pour les séquences de texte de longueur variable ou fixe. 
 
         Paramètres
             input_size: taille des entrées
@@ -89,7 +89,7 @@ class baseBiLSTM(nn.Module):
         """
         Modèle Bi-LSTM simple. 
         1 couche Bi-LSTM + 1 couche pleinement connectée. 
-        Pour les séquences de texte à longueur variable ou fixe. 
+        Pour les séquences de texte de longueur variable ou fixe. 
 
         Paramètres
             input_size: taille des entrées
@@ -168,7 +168,7 @@ class baseCNN(nn.Module):
         """
         Modèle CNN simple. 
         1 conv1D + 1 maxPool1D. 
-        Pour les séquences de texte à longueur fixe. 
+        Pour les séquences de texte de longueur fixe. 
 
         Paramètres
             input_size: taille des entrées
@@ -236,12 +236,87 @@ class baseCNN(nn.Module):
             return self.forward(X.to(self.device)).flatten().to("cpu")
 
 
+class CNNRNN(nn.Module):
+    def __init__(self, input_size: int, in_channels: int, out_channels: int, kernel_size: int, hidden_size: int, device: str):
+        """
+        Modèle hybride CNN-RNN. 
+        Source : https://www.sciencedirect.com/science/article/pii/S2667096820300070. 
+        Pour les séquences de texte de longueur fixe. 
+
+        Paramètres
+            input_size: taille des entrées
+            in_channels: nombre de canaux d'entrée
+            out_channels: nombre de canaux de sortie
+            kernel_size: taille du filtre convolutif
+            hidden_size: taille de la couche cachée (LSTM)
+            device: 'cpu', 'cuda', 'mps', ...
+        """
+        super(CNNRNN, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.hidden_size = hidden_size
+        self.device = device
+
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size, device=device)
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(2,2)
+        self.lstm = nn.LSTM((input_size-kernel_size+1)//2, hidden_size, num_layers=1, batch_first=True, device=device)
+        self.sortie = nn.Linear(hidden_size, 1, device=device)
+        self.sig = nn.Sigmoid()
+    
+    def forward(self, X: torch.Tensor):
+        """
+        Propagation avant pour l'entrainement. 
+
+        Entrée
+            X: données d'entrée (n_phrases, max_mots, n_emb)
+        
+        Sortie
+            sortie du modèle
+        """
+        scores = self.conv(X)
+        scores = self.relu(scores)
+        scores = self.maxpool(scores)
+        scores = self.lstm(scores)[0][:,-1,:]
+        scores = self.sortie(scores)
+        return self.sig(scores)
+    
+    def predict(self, X: list, seuil: float = 0.5):
+        """
+        Fonction qui effectue une prédiction. 
+
+        Entrée
+            X: données à utiliser (n_phrases, max_mots, n_emb)
+            seuil: seuil de la classe positive (p>seuil -> 1)
+        
+        Sortie
+            prédictions du modèle (n_phrases,)
+        """
+        with torch.no_grad():
+            pred = self.predict_proba(X)
+            return torch.greater(pred,seuil).type(torch.int)
+    
+    def predict_proba(self, X: list):
+        """
+        Fonction qui effectue une prédiction (probabilités). 
+
+        Entrée
+            X: données à utiliser (n_phrases, max_mots, n_emb)
+        
+        Sortie
+            prédictions (probabilités) du modèle (n_phrases,)
+        """
+        with torch.no_grad():
+            return self.forward(X.to(self.device)).flatten().to("cpu")
+
+
 # Fonctions
 
 def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch.Tensor, X_val: list, y_val: torch.Tensor, device: str, verbose: int = 10):
     """
     Fonction qui entraine un réseau de neurones. 
-    Pour les séquences de texte à longueur variable. 
+    Pour les séquences de texte de longueur variable. 
 
     Entrées
         net: modèle
@@ -300,7 +375,7 @@ def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch
 def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Dataset, taille_batch: int, melanger: bool, device: str, verbose: int = 10):
     """
     Fonction qui entraine un réseau de neurones. 
-    Pour les séquences de texte à longueur fixe. 
+    Pour les séquences de texte de longueur fixe. 
 
     Entrées
         net: modèle
