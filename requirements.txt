@@ -6,3 +6,4 @@ IPython
 matplotlib
 scikit-learn
 gensim
+tensorboard
