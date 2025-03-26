@@ -3,6 +3,7 @@ import time
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import Dataset, DataLoader
 from IPython.display import clear_output
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay
@@ -313,7 +314,7 @@ class CNNRNN(nn.Module):
 
 # Fonctions
 
-def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch.Tensor, X_val: list, y_val: torch.Tensor, device: str, verbose: int = 10):
+def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch.Tensor, X_val: list, y_val: torch.Tensor, device: str, writer: SummaryWriter, verbose: int = 10):
     """
     Fonction qui entraine un réseau de neurones. 
     Pour les séquences de texte de longueur variable. 
@@ -327,6 +328,7 @@ def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch
         X_val: données de validation n_phrases_v * (n_mots_v_i, n_emb)
         y_val: étiquettes de validation (n_phrases_v,)
         device: 'cpu', 'cuda', 'mps', ...
+        writer: writer pour Tensorboard
         verbose: fréquence d'affichage de la progression
     """
     loss_fn = nn.BCELoss().to(device)
@@ -356,6 +358,8 @@ def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch
                 val_losses.append(val_loss.item())
         erreurs["dev"].append(np.mean(val_losses))
 
+        writer.add_scalars("Loss", {"train": erreurs["train"][-1], "dev": erreurs["dev"][-1]}, epoch)
+
         fin = time.perf_counter()
         somme_temps += fin-debut
         if epoch%verbose==0:
@@ -372,7 +376,7 @@ def train_seq_var(net, optimizer, max_epochs: int, X_train: list, y_train: torch
     plt.show()
 
 
-def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Dataset, taille_batch: int, melanger: bool, device: str, verbose: int = 10):
+def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Dataset, taille_batch: int, melanger: bool, device: str, writer: SummaryWriter, verbose: int = 10):
     """
     Fonction qui entraine un réseau de neurones. 
     Pour les séquences de texte de longueur fixe. 
@@ -386,6 +390,7 @@ def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Da
         taille_batch: taille des batchs d'entrainement
         melanger: si on mélange les données d'entrainement
         device: 'cpu', 'cuda', 'mps', ...
+        writer: writer pour Tensorboard
         verbose: fréquence d'affichage de la progression
     """
     train_dataloader = DataLoader(Xy_train,taille_batch,melanger)
@@ -396,7 +401,6 @@ def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Da
     for epoch in range(1,max_epochs+1):
         debut = time.perf_counter()
         train_losses = []
-        val_losses = []
         
         for X,y in train_dataloader:
             optimizer.zero_grad()
@@ -411,6 +415,8 @@ def train_seq_fix(net, optimizer, max_epochs: int, Xy_train: Dataset, Xy_val: Da
             pred_val = net(Xy_val.X.to(device))
             val_loss = loss_fn(pred_val,Xy_val.y[:,None].to(device)).mean()
         erreurs["dev"].append(val_loss.item())
+
+        writer.add_scalars("Loss", {"train": erreurs["train"][-1], "dev": erreurs["dev"][-1]}, epoch)
 
         fin = time.perf_counter()
         somme_temps += fin-debut
