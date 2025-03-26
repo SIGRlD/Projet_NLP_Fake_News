@@ -18,7 +18,7 @@ class GloVeModel():
         """
         self.dico = {}
         self.index_to_key = []
-        with open(fichier,'r') as f:
+        with open(fichier,"r") as f:
             for line in f:
                 split_line = line.split()
                 word = split_line[0]
