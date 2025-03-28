@@ -1,7 +1,7 @@
 import pandas as pd  # Bibliothèque pour manipuler des tableaux de données (DataFrame)
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk.tokenize import word_tokenize
+from nltk import word_tokenize
 
 # Charger le jeu de données
 def load_dataset(file_path: str) -> pd.DataFrame:
@@ -34,12 +34,13 @@ def calculate_cosine_similarity(text: str, title: str) -> float:
     return cosine_similarity(vectors)[0, 1]
 
 # Nettoyer le jeu de données
-def clean_dataset(data_frame_dirty: pd.DataFrame) -> pd.DataFrame:
+def clean_dataset(data_frame_dirty: pd.DataFrame, limite_mots: int = 3000) -> pd.DataFrame:
     """
     Nettoyer un jeu de données en supprimant les valeurs manquantes et les doublons.
 
     Args :
         data_frame_dirty (DataFrame) : Un DataFrame contenant le jeu de données, pas encore nettoyé.
+        limite_mots (int) : le nombre maximum de mots pour un titre + article combinés
 
     Returns :
         DataFrame : Un DataFrame nettoyé.
@@ -101,12 +102,10 @@ def clean_dataset(data_frame_dirty: pd.DataFrame) -> pd.DataFrame:
 
     data_frame_cleaned["our rating"] = data_frame_cleaned["our rating"].str.lower()
     data_frame_cleaned["full_text"] = data_frame_cleaned.title+" "+data_frame_cleaned.text
-    # for i in data_frame_cleaned.index:
-    #     data_frame_cleaned["nb_mots"] = len(word_tokenize(data_frame_cleaned.full_text[i]))
-    # print(data_frame_cleaned[data_frame_cleaned.nb_mots>3000].shape[0])
-    # data_frame_cleaned = data_frame_cleaned[data_frame_cleaned.nb_mots<=3000].copy()
-    # data_frame_cleaned.drop(columns=["full_text","nb_mots"],inplace=True)
-    # data_frame_cleaned.reset_index(drop=True,inplace=True)
+    data_frame_cleaned["nb_mots"] = [len(word_tokenize(token)) for token in data_frame_cleaned.full_text.values]
+    data_frame_cleaned = data_frame_cleaned[data_frame_cleaned.nb_mots<=limite_mots].copy()
+    data_frame_cleaned.drop(columns=["nb_mots"],inplace=True)
+    data_frame_cleaned.reset_index(drop=True,inplace=True)
 
     return data_frame_cleaned
 
