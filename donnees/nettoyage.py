@@ -1,6 +1,7 @@
 import pandas as pd  # Bibliothèque pour manipuler des tableaux de données (DataFrame)
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk import word_tokenize
 
 # Charger le jeu de données
 def load_dataset(file_path: str) -> pd.DataFrame:
@@ -33,17 +34,18 @@ def calculate_cosine_similarity(text: str, title: str) -> float:
     return cosine_similarity(vectors)[0, 1]
 
 # Nettoyer le jeu de données
-def clean_dataset(data_frame_dirty: pd.DataFrame) -> pd.DataFrame:
+def clean_dataset(data_frame_dirty: pd.DataFrame, limite_mots: int = 3000) -> pd.DataFrame:
     """
     Nettoyer un jeu de données en supprimant les valeurs manquantes et les doublons.
 
     Args :
         data_frame_dirty (DataFrame) : Un DataFrame contenant le jeu de données, pas encore nettoyé.
+        limite_mots (int) : le nombre maximum de mots pour un titre + article combinés
 
     Returns :
         DataFrame : Un DataFrame nettoyé.
     """
-    data_frame_cleaned = data_frame_dirty.copy()
+    data_frame_cleaned = data_frame_dirty[["title","text","our rating"]].copy()
 
     # Retirer les espaces en trop
     data_frame_cleaned = data_frame_cleaned.replace("   ", " ")
@@ -98,6 +100,13 @@ def clean_dataset(data_frame_dirty: pd.DataFrame) -> pd.DataFrame:
             j+=1
         i+=1
 
+    data_frame_cleaned["our rating"] = data_frame_cleaned["our rating"].str.lower()
+    data_frame_cleaned["full_text"] = data_frame_cleaned.title+" "+data_frame_cleaned.text
+    data_frame_cleaned["nb_mots"] = [len(word_tokenize(token)) for token in data_frame_cleaned.full_text.values]
+    data_frame_cleaned = data_frame_cleaned[data_frame_cleaned.nb_mots<=limite_mots].copy()
+    data_frame_cleaned.drop(columns=["nb_mots"],inplace=True)
+    data_frame_cleaned.reset_index(drop=True,inplace=True)
+
     return data_frame_cleaned
 
 def add_columns(data_frame: pd.DataFrame):
@@ -110,9 +119,9 @@ def add_columns(data_frame: pd.DataFrame):
     Returns :
         DataFrame : Un DataFrame avec les colonnes ajoutées.
     """
-    data_frame["true"] = data_frame["our rating"].apply(lambda x: "TRUE" if x == "TRUE" else "rest")
-    data_frame["false"] = data_frame["our rating"].apply(lambda x: "FALSE" if x == "FALSE" else "rest")
-    data_frame["partially false"] = data_frame["our rating"].apply(lambda x: "partially false" if x == "partially false" else "rest")
-    data_frame["other"] = data_frame["our rating"].apply(lambda x: "other" if x == "other" else "rest")
+    data_frame["true"] = data_frame["our rating"].apply(lambda x: 1 if x == "true" else 0)
+    data_frame["false"] = data_frame["our rating"].apply(lambda x: 1 if x == "false" else 0)
+    data_frame["partially_false"] = data_frame["our rating"].apply(lambda x: 1 if x == "partially false" else 0)
+    data_frame["other"] = data_frame["our rating"].apply(lambda x: 1 if x == "other" else 0)
 
     return data_frame

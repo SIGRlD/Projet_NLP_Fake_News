@@ -11,9 +11,6 @@ if __name__ == "__main__":
 
     print(data_frame.head())
 
-    # On supprime l'id de la ligne
-    data_frame = data_frame.drop(columns=["public_id"])
-
     # On nettoye le jeu de données
     data_frame = clean_dataset(data_frame)
 
@@ -21,4 +18,3 @@ if __name__ == "__main__":
     data_frame = add_columns(data_frame)
 
     print(data_frame.head())
-
