@@ -8,4 +8,4 @@ Ce répertoire contient tous les scripts nécessaires au projet.
   * *utils.py* : fonctions utilitaires pour manipuler les données pré-entrainement
 * **embedding.py** : fonctions d'embedding des données
 * **main.py** : script principal
-* **exemple_pretraitement** : notebook qui présente un exemple de pré-traitement
+* **exemple_pretraitement.ipynb** : notebook qui présente un exemple de pré-traitement
