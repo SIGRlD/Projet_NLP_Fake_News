@@ -4,6 +4,7 @@ import time
 import torch
 from nltk.tokenize import word_tokenize
 from IPython.display import clear_output
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 class GloVeModel():
@@ -32,6 +33,30 @@ class GloVeModel():
         else:
             raise Exception(f"Key '{cle}' not present")
 
+class TfIdf:
+    def __init__(self, texte, max_features=20000):
+        """
+        Fonction qui realise un embedding tf idf sur les entrees donnees
+        A besoin d'un tableau contenant les textes qu on veut traiter avec le modele
+        ex: un tableau contenant pour chaque entree la combinaison titre + contenu du document
+        NB: avoir pretraite le texte avant d appeler l embedding
+        :param texte: tableau/liste
+        :param max_features: nombre max de mots dans le vocabulaire
+        :return: les embedding sous forme de sparse matrix
+        """
+        modele = TfidfVectorizer(max_features=max_features)
+        self.X = modele.fit_transform(texte)
+        self.vocab = modele.vocabulary
+        self.modele = modele
+
+    def embedding_newdata(self, texte):
+        """
+        Methode qui prend en entree un texte 'nouveau' pour retourner la matrice TF IDF
+        en accord avec le vocabulaire appris lors de l initialisation de la classe
+        :param texte: tableau/liste
+        :return: les embedding sous forme de sparse matrix
+        """
+        return self.modele.transform(texte)
 
 def embedding(mots: list, modele):
     """
