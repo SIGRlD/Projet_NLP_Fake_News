@@ -34,7 +34,7 @@ class GloVeModel():
             raise Exception(f"Key '{cle}' not present")
 
 class TfIdf:
-    def __init__(self, texte, max_features=20000):
+    def __init__(self, texte, max_features=20000, max_df=0.9, min_df=0.2):
         """
         Fonction qui realise un embedding tf idf sur les entrees donnees
         A besoin d'un tableau contenant les textes qu on veut traiter avec le modele
@@ -42,9 +42,18 @@ class TfIdf:
         NB: avoir pretraite le texte avant d appeler l embedding
         :param texte: tableau/liste
         :param max_features: nombre max de mots dans le vocabulaire
+        :param max_df: fréquence maximale des mots dans les documents
+        :param min_df: fréquence minimale des mots dans les documents
         :return: les embedding sous forme de sparse matrix
         """
-        modele = TfidfVectorizer(max_features=max_features)
+        modele = TfidfVectorizer(
+            max_features=max_features,
+            lowercase=True,
+            stop_words='english',
+            max_df=max_df,
+            min_df=min_df,
+            sublinear_tf=True,
+            )
         self.X = modele.fit_transform(texte)
         self.vocab = modele.vocabulary
         self.modele = modele
