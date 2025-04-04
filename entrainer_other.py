@@ -49,7 +49,7 @@ classifieur = classifier_models(embedding.X, y_train_other)
 embedding_tests = embedding.embedding_newdata(data_test.full_text)
 pred = classifieur.predict_labels(embedding_tests)
 scores = classifieur.predict_scores(embedding_tests)
-print(scores)
+# print(scores)
 
 print("Accuracy sur le jeu de test = ", accuracy_score(y_test_other, pred))
 scores_train = classifieur.predict_scores(embedding.X)
@@ -66,3 +66,13 @@ df_test = pd.DataFrame({
     "label": y_test
 })
 df_test.to_csv("test_scores_other.csv", index=False)
+
+
+embedding_dev = embedding.embedding_newdata(data_test.full_text)
+scores_dev = classifieur.predict_scores(embedding_dev)
+
+df_dev = pd.DataFrame({
+    "score": scores_dev,
+    "label": y_test
+})
+df_dev.to_csv("dev_scores_other.csv", index=False)

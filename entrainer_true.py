@@ -1,10 +1,7 @@
 from sklearn.metrics import accuracy_score
 import pandas as pd
 from embedding import TfIdf
-from gensim.models import KeyedVectors
 from donnees.nettoyage import load_dataset, clean_dataset, add_columns
-from donnees.utils import FakeNewsDataset, ajuster_canaux
-from embedding import GloVeModel, tokeniser
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 from classifier_other_and_true import classifier_models
@@ -66,3 +63,12 @@ df_test = pd.DataFrame({
     "label": y_test
 })
 df_test.to_csv("test_scores_true.csv", index=False)
+
+embedding_dev = embedding.embedding_newdata(data_test.full_text)
+scores_dev = classifieur.predict_scores(embedding_dev)
+
+df_dev = pd.DataFrame({
+    "score": scores_dev,
+    "label": y_test
+})
+df_dev.to_csv("dev_scores_true.csv", index=False)
