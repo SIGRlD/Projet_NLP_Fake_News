@@ -50,8 +50,6 @@ class TfIdf:
             max_features=max_features,
             lowercase=True,
             stop_words='english',
-            max_df=max_df,
-            min_df=min_df,
             sublinear_tf=True,
             )
         self.X = modele.fit_transform(texte)
