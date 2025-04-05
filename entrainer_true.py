@@ -26,6 +26,7 @@ print(embedding.X.shape)
 label_encoder = LabelEncoder()
 y_train = label_encoder.fit_transform(data_train['our rating'])
 y_test = label_encoder.transform(data_test['our rating'])
+y_dev = label_encoder.transform(data_dev['our rating'])
 
 y_train_true = []
 for pred in y_train:
@@ -42,15 +43,24 @@ for pred in y_test:
     y_test_true.append(0)
 y_test_true = np.array(y_test_true)
 
-classifieur = classifier_models(embedding.X, y_train_true, rebalance=True)
+y_dev_true = []
+for pred in y_dev:
+  if pred == 3:
+    y_dev_true.append(1)
+  else:
+    y_dev_true.append(0)
+y_dev_true = np.array(y_dev_true)
+
+classifieur = classifier_models(embedding.X, y_train_true, rebalance=False)
+
+
 embedding_tests = embedding.embedding_newdata(data_test.full_text)
 pred = classifieur.predict_labels(embedding_tests)
 scores = classifieur.predict_scores(embedding_tests)
-print(scores)
 
 print("Accuracy sur le jeu de test = ", accuracy_score(y_test_true, pred))
-scores_train = classifieur.predict_scores(embedding.X)
 
+scores_train = classifieur.predict_scores(embedding.X)
 df_train = pd.DataFrame({
     "score": scores_train,
     "label": y_train
@@ -64,11 +74,14 @@ df_test = pd.DataFrame({
 })
 df_test.to_csv("test_scores_true.csv", index=False)
 
-embedding_dev = embedding.embedding_newdata(data_test.full_text)
+embedding_dev = embedding.embedding_newdata(data_dev.full_text)
 scores_dev = classifieur.predict_scores(embedding_dev)
 
 df_dev = pd.DataFrame({
     "score": scores_dev,
-    "label": y_test
+    "label": y_dev
 })
 df_dev.to_csv("dev_scores_true.csv", index=False)
+
+pred = classifieur.predict_labels(embedding_dev)
+print("Accuracy sur le jeu de dev = ", accuracy_score(y_dev_true, pred))
