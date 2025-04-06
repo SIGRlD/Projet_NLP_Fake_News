@@ -19,13 +19,13 @@ data_test = clean_dataset(data_test)
 data_test = add_columns(data_test)
 
 # Exemple : créer un dataset HF à partir de tes pandas
-data_train_hf = data_train[["full_text", "true"]].rename(columns={"true": "labels"})
-data_dev_hf = data_dev[["full_text", "true"]].rename(columns={"true": "labels"})
-data_test_hf = data_test[["full_text", "true"]].rename(columns={"true": "labels"})
+data_train_hf = data_train[["full_text", "partially_false"]].rename(columns={"partially_false": "labels"})
+data_dev_hf = data_dev[["full_text", "partially_false"]].rename(columns={"partially_false": "labels"})
+data_test_hf = data_test[["full_text", "partially_false"]].rename(columns={"partially_false": "labels"})
 
 # ========== ARGUMENTS ========== #
-model_dir = "bert_model_true/"
-output_csv = "predictions.csv"
+model_dir = "bert_model_partfalse/"
+output_csv = "predictions_train_partfalse.csv"
 batch_size = 16
 
 # ========== CHARGEMENT DU MODELE ========== #
@@ -33,9 +33,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 model.eval()
-
-# ========== CHARGEMENT DES DONNEES ========== #
-
+#
+# # ========== CHARGEMENT DES DONNEES ========== #
+#
 # texts = data_train_hf["full_text"].tolist()
 #
 # # ========== PRÉDICTION ========== #
@@ -52,13 +52,13 @@ model.eval()
 #     labels.extend(torch.argmax(probs, dim=1).cpu().numpy())  # 0 ou 1
 #
 # # ========== SAUVEGARDE ========== #
-# data_train_hf["score_true"] = scores
-# data_train_hf["pred_true"] = labels
+# data_train_hf["score_partially_false"] = scores
+# data_train_hf["pred_partially_false"] = labels
 # data_train_hf.to_csv(output_csv, index=False)
 #
 # print(f"✅ Prédictions enregistrées dans {output_csv}")
 #-------------------------------------------------------------------------------------------------
-# output_csv = "predictions_dev.csv"
+# output_csv = "predictions_dev_partfalse.csv"
 # texts = data_dev_hf["full_text"].tolist()
 #
 # # ========== PRÉDICTION ========== #
@@ -75,13 +75,13 @@ model.eval()
 #     labels.extend(torch.argmax(probs, dim=1).cpu().numpy())  # 0 ou 1
 #
 # # ========== SAUVEGARDE ========== #
-# data_dev_hf["score_true"] = scores
-# data_dev_hf["pred_true"] = labels
+# data_dev_hf["score_partially_false"] = scores
+# data_dev_hf["pred_partially_false"] = labels
 # data_dev_hf.to_csv(output_csv, index=False)
 #
-# print(f"✅ Prédictions enregistrées dans {output_csv}")
+# print(f"Prédictions enregistrées dans {output_csv}")
 #-----------------------------------------------------------------------------------------
-output_csv = "predictions_test.csv"
+output_csv = "predictions_test_partfalse.csv"
 texts = data_test_hf["full_text"].tolist()
 
 # ========== PRÉDICTION ========== #
@@ -98,8 +98,8 @@ for i in tqdm(range(0, len(texts), batch_size)):
     labels.extend(torch.argmax(probs, dim=1).cpu().numpy())  # 0 ou 1
 
 # ========== SAUVEGARDE ========== #
-data_test_hf["score_true"] = scores
-data_test_hf["pred_true"] = labels
+data_test_hf["score_partially_false"] = scores
+data_test_hf["pred_partially_false"] = labels
 data_test_hf.to_csv(output_csv, index=False)
 
-print(f"✅ Prédictions enregistrées dans {output_csv}")
+print(f"Prédictions enregistrées dans {output_csv}")
