@@ -1,0 +1,87 @@
+from ajout_donnees import ajout_donnees
+from sklearn.preprocessing import LabelEncoder
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
+from datasets import Dataset
+from donnees.nettoyage import load_dataset, clean_dataset, add_columns
+
+
+def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data=True):
+    """
+    Cette fonction permet d effectuer l entrainement d un modele BERT pour une classe au choix
+    :param chemin_train: chemin vers le fichier des donnees d entrainement
+    :param chemin_dev: chemin vers le fichier de dev
+    :param chemin_output: chemin vers le dossier des outputs, mieux vaut specifier un nouveau dossier
+    :param label: label pour le modele binaire, 0 si faux, 1 si autre, 2 si partiellement faux, 3 si vrai
+    :param ajout_data: vrai si on reequilibre les classes pour avoir un dataset bien reparti entre les quatre labels
+    :return:
+    """
+    # Reequilibrage des classes si specifie
+    if ajout_data:
+        data_train_hf = ajout_donnees(chemin_train)
+    else:
+        data_train = load_dataset(chemin_train)
+        data_train = clean_dataset(data_train)
+        data_train = add_columns(data_train)
+        data_train_hf = data_train[["full_text", "our rating"]].rename(columns={"other": "labels"})
+
+    #Recuperation du jeu de dev
+    data_dev = load_dataset(chemin_dev)
+    data_dev = clean_dataset(data_dev)
+    data_dev = add_columns(data_dev)
+    data_dev_hf = data_dev[["full_text", "our rating"]].rename(columns={"other": "labels"})
+
+    # Transformation des labels en valeurs numeriques
+    # false: 0, other: 1, partfalse: 2, true: 3
+    label_encoder = LabelEncoder()
+    data_train_hf['labels'] = label_encoder.fit_transform(data_train_hf['labels'])
+    data_dev_hf['labels'] = label_encoder.fit_transform(data_dev_hf['labels'])
+
+    # On convertit en float pour le modele
+    data_train_hf['labels'] = (data_train_hf['labels'] == label).astype(float)
+    data_dev_hf['labels'] = (data_dev_hf['labels'] == label).astype(float)
+
+    # On transforme les dataframe en objets dataset
+    dataset_train = Dataset.from_pandas(data_train_hf)
+    dataset_dev = Dataset.from_pandas(data_dev_hf)
+
+    # Tokenizer et modele
+    checkpoint = "distilbert-base-uncased"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+
+    # On definit la fonction de tokenization
+    def tokenize(batch):
+        return tokenizer(batch["full_text"], padding="max_length", truncation=True)
+
+    # On tokenize nos datasets
+    dataset_train = dataset_train.map(tokenize, batched=True)
+    dataset_dev = dataset_dev.map(tokenize, batched=True)
+
+    # On recupere le modele
+    model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=1)
+
+    # On entraine
+    args = TrainingArguments(
+        output_dir="./checkpoints",  # Sauvegardes
+        evaluation_strategy="epoch",
+        logging_strategy="epoch",
+        save_strategy="epoch",
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        num_train_epochs=3,
+        weight_decay=0.01,
+    )
+
+    # On initialise un objet trainer
+    trainer = Trainer(
+        model=model,
+        args=args,
+        train_dataset=dataset_train,
+        eval_dataset=dataset_dev,
+        tokenizer=tokenizer,
+    )
+
+    # On lance l entrainement et on sauvegarde le resultat
+    trainer.train()
+    model.save_pretrained(chemin_output)
+    tokenizer.save_pretrained(chemin_output)
+
