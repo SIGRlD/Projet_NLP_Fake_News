@@ -21,9 +21,9 @@ data_test = clean_dataset(data_test)
 data_test = add_columns(data_test)
 
 # Exemple : créer un dataset HF à partir de tes pandas
-data_train_hf = data_train[["full_text", "other"]].rename(columns={"other": "labels"})
-data_dev_hf = data_dev[["full_text", "other"]].rename(columns={"other": "labels"})
-data_test_hf = data_test[["full_text", "other"]].rename(columns={"other": "labels"})
+data_train_hf = data_train[["full_text", "true"]].rename(columns={"other": "labels"})
+data_dev_hf = data_dev[["full_text", "true"]].rename(columns={"other": "labels"})
+data_test_hf = data_test[["full_text", "true"]].rename(columns={"other": "labels"})
 
 label_encoder = LabelEncoder()
 data_train_hf['labels'] = label_encoder.fit_transform(data_train_hf['labels'])

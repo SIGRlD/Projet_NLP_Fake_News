@@ -30,8 +30,8 @@ data_dev_hf['labels'] = label_encoder.fit_transform(data_dev_hf['labels'])
 data_test_hf['labels'] = label_encoder.fit_transform(data_test_hf['labels'])
 
 # ========== ARGUMENTS ========== #
-model_dir = "bert_model_all_class/"
-output_csv = "predictions_train_all_class.csv"
+model_dir = "bert_model_true_equilibre/"
+output_csv = "predictions_true_equilibre_train.csv"
 batch_size = 16
 
 # ========== CHARGEMENT DU MODELE ========== #
@@ -58,7 +58,7 @@ for i in tqdm(range(0, len(texts), batch_size)):
     labels.extend(torch.argmax(probs, dim=1).cpu().numpy())  # 0 ou 1
 
 # ========== SAUVEGARDE ========== #
-# data_train_hf["score_partially_false"] = scores
+data_train_hf["scores"] = scores
 data_train_hf["pred"] = labels
 data_train_hf.to_csv(output_csv, index=False)
 
