@@ -10,7 +10,7 @@ import numpy as np
 data_dev = load_dataset("donnees/FakeNews_Task3_2022/Task3_train_dev/Task3_english_dev.csv")
 data_dev = clean_dataset(data_dev)
 data_dev = add_columns(data_dev)
-data_dev_hf = data_dev[["full_text", "other"]].rename(columns={"other": "labels"})
+data_dev_hf = data_dev[["full_text", "our rating"]].rename(columns={"other": "labels"})
 
 data_train_hf = pd.read_csv("train_augmente.csv")
 label_encoder = LabelEncoder()

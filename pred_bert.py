@@ -54,13 +54,14 @@ for i in tqdm(range(0, len(texts), batch_size)):
         outputs = model(**inputs)
         probs = torch.softmax(outputs.logits, dim=1)
 
-    scores.extend(probs[:, 1].cpu().numpy())           # Score pour la classe "true"
+    scores.extend(probs[:, 0].cpu().numpy())           # Score pour la classe "true"
     labels.extend(torch.argmax(probs, dim=1).cpu().numpy())  # 0 ou 1
 
 # ========== SAUVEGARDE ========== #
 data_train_hf["scores"] = scores
 data_train_hf["pred"] = labels
-data_train_hf.to_csv(output_csv, index=False)
+out_csv = data_train_hf[["full_text", "labels", "scores", "pred"]]
+out_csv.to_csv(output_csv, index=False)
 
 print(f"✅ Prédictions enregistrées dans {output_csv}")
 #-------------------------------------------------------------------------------------------------
