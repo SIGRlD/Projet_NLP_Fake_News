@@ -20,10 +20,10 @@ def ajout_donnees(chemin):
     true_add_len = np.minimum(ref_len-len(data_train_hf[data_train_hf['labels'] == "true"]),
                               len(add_train[add_train['label'] == "true"]))
 
-    other_add_len = np.minimum(ref_len-len(data_train_hf[data_train_hf['labels'] == "true"]),
+    other_add_len = np.minimum(ref_len-len(data_train_hf[data_train_hf['labels'] == "other"]),
                                len(add_train[add_train['label'] == "fiction!"]))
 
-    partfalse_add_len = np.minimum(ref_len-len(data_train_hf[data_train_hf['labels'] == "true"]),
+    partfalse_add_len = np.minimum(ref_len-len(data_train_hf[data_train_hf['labels'] == "partially false"]),
                                    len(add_train[add_train['label'] == "half true"]))
 
     true_add = add_train[add_train['label'] == "true"]['claim'][:true_add_len]
