@@ -5,7 +5,7 @@ from datasets import Dataset
 from donnees.nettoyage import load_dataset, clean_dataset, add_columns
 
 
-def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data=True):
+def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data=False):
     """
     Cette fonction permet d effectuer l entrainement d un modele BERT pour une classe au choix
     :param chemin_train: chemin vers le fichier des donnees d entrainement
