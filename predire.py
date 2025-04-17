@@ -13,10 +13,6 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele):
     :return: sauvegarde les predictions
     """
     data = load_dataset(chemin_entree)
-    # Gestion d erreurs pour le format du dataset
-    if "full_text" not in data.columns:
-        print("Dataset non conforme, il doit avoir la colonne 'full_text'")
-        return 1
     if "labels" not in data.columns and "our rating" not in data.columns:
         print("Dataset non conforme, il doit avoir une colonne 'labels' ou 'our rating'")
         return 2
@@ -26,10 +22,16 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele):
         data = clean_dataset(data)
         data = add_columns(data)
         # Exemple : créer un dataset HF à partir de tes pandas
-        data_train_hf = data[["full_text", "our rating"]].rename(columns={"our rating": "labels"})
-
+        data = data[["full_text", "our rating"]].rename(columns={"our rating": "labels"})
+        label_order = ['false', 'other', 'partially false', 'true']
         label_encoder = LabelEncoder()
-        data_train_hf['labels'] = label_encoder.fit_transform(data_train_hf['labels'])
+        label_encoder.fit(label_order)
+        data['labels'] = label_encoder.transform(data['labels'])
+
+    # Gestion d erreurs pour le format du dataset
+    if "full_text" not in data.columns:
+        print("Dataset non conforme, il doit avoir la colonne 'full_text'")
+        return 1
 
     # Chemins du modele et de la sortie
     model_dir = chemin_modele

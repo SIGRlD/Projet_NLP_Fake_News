@@ -22,19 +22,21 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
         data_train = load_dataset(chemin_train)
         data_train = clean_dataset(data_train)
         data_train = add_columns(data_train)
-        data_train_hf = data_train[["full_text", "our rating"]].rename(columns={"other": "labels"})
+        data_train_hf = data_train[["full_text", "our rating"]].rename(columns={"our rating": "labels"})
 
     #Recuperation du jeu de dev
     data_dev = load_dataset(chemin_dev)
     data_dev = clean_dataset(data_dev)
     data_dev = add_columns(data_dev)
-    data_dev_hf = data_dev[["full_text", "our rating"]].rename(columns={"other": "labels"})
+    data_dev_hf = data_dev[["full_text", "our rating"]].rename(columns={"our rating": "labels"})
 
     # Transformation des labels en valeurs numeriques
     # false: 0, other: 1, partfalse: 2, true: 3
+    label_order = ['false', 'other', 'partially false', 'true']
     label_encoder = LabelEncoder()
-    data_train_hf['labels'] = label_encoder.fit_transform(data_train_hf['labels'])
-    data_dev_hf['labels'] = label_encoder.fit_transform(data_dev_hf['labels'])
+    label_encoder.fit(label_order)
+    data_train_hf['labels'] = label_encoder.transform(data_train_hf['labels'])
+    data_dev_hf['labels'] = label_encoder.transform(data_dev_hf['labels'])
 
     # On convertit en float pour le modele
     data_train_hf['labels'] = (data_train_hf['labels'] == label).astype(float)
