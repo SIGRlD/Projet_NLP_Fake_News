@@ -5,13 +5,14 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Dist
 from donnees.nettoyage import load_dataset, clean_dataset, add_columns
 
 
-def predire_binaire(chemin_entree, chemin_output, chemin_modele, label):
+def predire_binaire(chemin_entree, chemin_output, chemin_modele, label, ensemble):
     """
     Sauvegarde un csv de predictions dans un csv
     :param chemin_entree: chemin du fichier d entree
-    :param chemin_output: chemin de l output
+    :param chemin_output: chemin du dossier de l output
     :param chemin_modele: chemin du dossier contenant le modele
     :param label: label pour le modele binaire, 0 si faux, 1 si autre, 2 si partiellement faux, 3 si vrai
+    :param ensemble nom de l'ensemble de données (train, dev, test, ...)
     :return: sauvegarde les predictions
     """
     data = load_dataset(chemin_entree)
@@ -37,7 +38,7 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele, label):
 
     # Chemins du modele et de la sortie
     model_dir = chemin_modele
-    output_csv = chemin_output
+    output_csv = chemin_output+f"{ensemble}_scores_{label_order[label]}.csv"
     batch_size = 16
 
     # On utilise cuda si possible, on definit le modlee a utiliser ainsi que le tokenizer
@@ -71,7 +72,7 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele, label):
 
     # On sauvegarde le csv des predictions
     data["scores"] = scores
-    out_csv = data[["full_text", "labels", "scores"]]
+    out_csv = data[["scores", "labels"]]
     out_csv.to_csv(output_csv, index=False)
 
     print(f"Prédictions enregistrées dans {output_csv}")

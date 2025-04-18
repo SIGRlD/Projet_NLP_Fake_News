@@ -70,7 +70,7 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
     if label>0:
         args = TrainingArguments(
             output_dir="../modeles/checkpoints",  # Sauvegardes
-            evaluation_strategy="epoch",
+            eval_strategy="epoch",
             logging_strategy="epoch",
             save_strategy="epoch",
             per_device_train_batch_size=8,
@@ -83,6 +83,8 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
         args = TrainingArguments(
             output_dir="../modeles/checkpoints",
             eval_strategy="epoch",
+            logging_strategy="epoch",
+            save_strategy="epoch",
             learning_rate=1e-5,
             per_device_train_batch_size=10,
             num_train_epochs=5,
@@ -97,7 +99,6 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
         args=args,
         train_dataset=dataset_train,
         eval_dataset=dataset_dev,
-        tokenizer=tokenizer,
     )
 
     # On lance l entrainement et on sauvegarde le resultat
