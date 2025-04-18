@@ -69,7 +69,7 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
     # On entraine
     if label>0:
         args = TrainingArguments(
-            output_dir="../modeles/checkpoints",  # Sauvegardes
+            output_dir="./modeles/checkpoints",  # Sauvegardes
             eval_strategy="epoch",
             logging_strategy="epoch",
             save_strategy="epoch",
@@ -81,7 +81,7 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
         )
     else:
         args = TrainingArguments(
-            output_dir="../modeles/checkpoints",
+            output_dir="./modeles/checkpoints",
             eval_strategy="epoch",
             logging_strategy="epoch",
             save_strategy="epoch",
