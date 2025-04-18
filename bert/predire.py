@@ -1,15 +1,17 @@
 import torch
-from sklearn.preprocessing import LabelEncoder
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from tqdm import tqdm
+from sklearn.preprocessing import LabelEncoder
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, DistilBertForSequenceClassification
 from donnees.nettoyage import load_dataset, clean_dataset, add_columns
 
-def predire_binaire(chemin_entree, chemin_output, chemin_modele):
+
+def predire_binaire(chemin_entree, chemin_output, chemin_modele, label):
     """
     Sauvegarde un csv de predictions dans un csv
     :param chemin_entree: chemin du fichier d entree
     :param chemin_output: chemin de l output
     :param chemin_modele: chemin du dossier contenant le modele
+    :param label: label pour le modele binaire, 0 si faux, 1 si autre, 2 si partiellement faux, 3 si vrai
     :return: sauvegarde les predictions
     """
     data = load_dataset(chemin_entree)
@@ -39,8 +41,11 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele):
     batch_size = 16
 
     # On utilise cuda si possible, on definit le modlee a utiliser ainsi que le tokenizer
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if label>0:
+        model = AutoModelForSequenceClassification.from_pretrained(model_dir, num_labels=1, device_map=device)
+    else:
+        model = DistilBertForSequenceClassification.from_pretrained(model_dir, num_labels=1, device_map=device)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
     model.eval()
 
@@ -48,7 +53,7 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele):
     texts = data["full_text"].tolist()
 
     # On predit en gardant les labels et scores de cote
-    scores, labels = [], []
+    scores = []
     for i in tqdm(range(0, len(texts), batch_size)):
         # On recupere un batch de texts qu on tokenize
         batch_texts = texts[i:i+batch_size]
@@ -57,16 +62,16 @@ def predire_binaire(chemin_entree, chemin_output, chemin_modele):
         # On calcule les outputs du modele et on recupere les scores
         with torch.no_grad():
             outputs = model(**inputs)
-            probs = torch.sigmoid(outputs.logits)
+            if label>0:
+                probs = torch.sigmoid(outputs.logits)
+            else:
+                probs = outputs.logits
 
         scores.extend(probs[:, 0].cpu().numpy())  # Score pour la classe
-        labels.extend((probs > 0.5).int().squeeze().cpu().numpy())  # 0 ou 1, on arrondit la proba
 
     # On sauvegarde le csv des predictions
     data["scores"] = scores
-    data["pred"] = labels
-    out_csv = data[["full_text", "labels", "scores", "pred"]]
+    out_csv = data[["full_text", "labels", "scores"]]
     out_csv.to_csv(output_csv, index=False)
 
     print(f"Prédictions enregistrées dans {output_csv}")
-

@@ -1,7 +1,7 @@
-import numpy as np
-import pandas as pd
 import time
 import torch
+import numpy as np
+import pandas as pd
 from nltk.tokenize import word_tokenize
 from IPython.display import clear_output
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -34,7 +34,7 @@ class GloVeModel():
             raise Exception(f"Key '{cle}' not present")
 
 class TfIdf:
-    def __init__(self, texte, max_features=20000, max_df=0.9, min_df=0.2):
+    def __init__(self, texte, max_features=20000, max_df=0.9, min_df=0.1):
         """
         Fonction qui realise un embedding tf idf sur les entrees donnees
         A besoin d'un tableau contenant les textes qu on veut traiter avec le modele
@@ -51,6 +51,8 @@ class TfIdf:
             lowercase=True,
             stop_words='english',
             sublinear_tf=True,
+            max_df=max_df,
+            min_df=min_df,
             )
         self.X = modele.fit_transform(texte)
         self.vocab = modele.vocabulary
