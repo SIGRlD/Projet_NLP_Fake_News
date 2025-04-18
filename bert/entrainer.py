@@ -1,7 +1,8 @@
-from ajout_donnees import ajout_donnees
-from sklearn.preprocessing import LabelEncoder
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
+import torch
 from datasets import Dataset
+from sklearn.preprocessing import LabelEncoder
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, DistilBertForSequenceClassification, Trainer, TrainingArguments
+from donnees.ajout_donnees import ajout_donnees
 from donnees.nettoyage import load_dataset, clean_dataset, add_columns
 
 
@@ -59,19 +60,36 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
     dataset_dev = dataset_dev.map(tokenize, batched=True)
 
     # On recupere le modele
-    model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=1)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if label>0:
+        model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=1, device_map=device)
+    else:
+        model = DistilBertForSequenceClassification.from_pretrained(checkpoint, num_labels=1, device_map=device)
 
     # On entraine
-    args = TrainingArguments(
-        output_dir="./checkpoints",  # Sauvegardes
-        evaluation_strategy="epoch",
-        logging_strategy="epoch",
-        save_strategy="epoch",
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        num_train_epochs=3,
-        weight_decay=0.01,
-    )
+    if label>0:
+        args = TrainingArguments(
+            output_dir="../modeles/checkpoints",  # Sauvegardes
+            evaluation_strategy="epoch",
+            logging_strategy="epoch",
+            save_strategy="epoch",
+            per_device_train_batch_size=8,
+            per_device_eval_batch_size=8,
+            num_train_epochs=3,
+            weight_decay=0.01,
+            report_to="none",
+        )
+    else:
+        args = TrainingArguments(
+            output_dir="../modeles/checkpoints",
+            eval_strategy="epoch",
+            learning_rate=1e-5,
+            per_device_train_batch_size=10,
+            num_train_epochs=5,
+            weight_decay=0.01,
+            logging_steps=10,
+            report_to="none",
+        )
 
     # On initialise un objet trainer
     trainer = Trainer(
@@ -86,4 +104,3 @@ def entrainer_binaire(chemin_train, chemin_dev, chemin_output, label, ajout_data
     trainer.train()
     model.save_pretrained(chemin_output)
     tokenizer.save_pretrained(chemin_output)
-

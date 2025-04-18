@@ -1,7 +1,7 @@
 import pandas as pd  # Bibliothèque pour manipuler des tableaux de données (DataFrame)
+from nltk import word_tokenize
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-from nltk import word_tokenize
 
 # Charger le jeu de données
 def load_dataset(file_path: str) -> pd.DataFrame:
