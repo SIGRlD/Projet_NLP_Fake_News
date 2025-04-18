@@ -1,5 +1,6 @@
 # Projet_NLP_Fake_News
-Projet de traitement automatique du langage
+Projet de traitement automatique des langues naturelles  
+Nathan Beaujean, Antoine Beunas, Tom Daguerre, Yuhan Ménard-Tétreault
 
 ## Structure du répertoire
 Ce répertoire contient tous les scripts nécessaires au projet.  
