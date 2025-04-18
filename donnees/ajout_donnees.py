@@ -35,5 +35,5 @@ def ajout_donnees(chemin):
     df_partfalse = pd.DataFrame({'full_text': partfalse_add, 'labels': 'partially false'})
 
     data_train_hf = pd.concat([data_train_hf, df_true, df_other, df_partfalse], ignore_index=True)
-    data_train_hf.to_csv("train_augmente.csv", index=False)
+    data_train_hf.to_csv("./donnees/train_augmente.csv", index=False)
     return data_train_hf
