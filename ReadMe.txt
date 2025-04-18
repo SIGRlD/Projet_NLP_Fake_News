@@ -6,6 +6,7 @@ Nathan Beaujean, Antoine Beunas, Tom Daguerre, Yuhan Ménard-Tétreault
 Ce répertoire contient tous les scripts nécessaires au projet.  
 * **train.py** : script principal pour l'entrainement des modèles de classification binaire
 * **predict.py** : script principal pour les prédictions des modèles de classification binaire
+* **result.ipynb** : notebook principal pour l'analyse des résultats finaux
 * **bert** : dossier contenant les scripts pour les modèles Bert
   * *entrainer.py* : fonction d'entrainement d'un modèle Bert
   * *predire.py* : fonction de prédictions d'un modèle Bert
